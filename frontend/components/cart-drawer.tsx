@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SheetDescription } from "@/components/ui/sheet";
 import { ShoppingCart, Trash2 } from "lucide-react";
-import { useCart } from "@/app/store/cart";
+import { useCart } from "@/app/(public)/store/cart";
 
 export function CartDrawer() {
   const { items, removeItem, increaseQuantity, decreaseQuantity } = useCart();

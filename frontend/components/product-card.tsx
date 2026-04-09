@@ -1,7 +1,7 @@
 // components/product-card.tsx
 "use client";
 
-import { useCart } from "@/app/store/cart";
+import { useCart } from "@/app/(public)/store/cart";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
