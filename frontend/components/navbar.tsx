@@ -6,10 +6,23 @@ import { Button } from "@/components/ui/button";
 import { CartDrawer } from "./cart-drawer";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 import { SearchIcon } from "lucide-react";
-
+import { useSession, signOut } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const userInitials = session?.user?.name
+    ? session.user.name.substring(0, 2).toUpperCase()
+    : "US";
 
   return (
 
@@ -59,9 +72,31 @@ export function Navbar() {
 
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => window.location.href = "/login"}>
-            <User size={18} />
-          </Button>
+          {session ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-6 w-6 rounded-full">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={session.user?.image || ""} alt={session.user?.name || "Usuário"} />
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => window.location.href = "/profile"}>
+                  Ver Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer text-red-600" onClick={() => signOut({ callbackUrl: "/" })}>
+                  Sair da Conta (Logout)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="ghost" size="icon" onClick={() => window.location.href = "/login"}>
+              <User size={18} />
+            </Button>
+          )}
           <CartDrawer />
 
           {/* Mobile botão */}

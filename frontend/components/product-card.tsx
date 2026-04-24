@@ -1,7 +1,7 @@
 // components/product-card.tsx
 "use client";
 
-import { useCart } from "@/app/(public)/store/cart";
+import { useCart } from "@/app/(private)/store/cart";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -12,7 +12,7 @@ export function ProductCard({ product }: any) {
   return (
     <Card className="hover:shadow-xl transition">
       <CardContent className="p-4">
-        
+
         <img src={product.image} className="rounded mb-4" />
 
         <h3>{product.name}</h3>

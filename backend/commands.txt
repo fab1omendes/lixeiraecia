@@ -12,3 +12,4 @@ touch api/users/migrations/__init__.py
 python manage.py makemigrations users
 python manage.py migrate users
 python manage.py migrate
+python manage.py createsuperuser

@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SheetDescription } from "@/components/ui/sheet";
 import { ShoppingCart, Trash2 } from "lucide-react";
-import { useCart } from "@/app/(public)/store/cart";
+import { useCart } from "@/app/(private)/store/cart";
 
 export function CartDrawer() {
   const { items, removeItem, increaseQuantity, decreaseQuantity } = useCart();
@@ -101,29 +101,29 @@ export function CartDrawer() {
 
                 <div className="flex items-center justify-between mt-2">
 
-                    {/* Quantidade */}
-                    <div className="flex items-center gap-2">
-                        <button
-                        onClick={() => decreaseQuantity(item.id, item.size)}
-                        className="px-2 border rounded"
-                        >
-                        -
-                        </button>
+                  {/* Quantidade */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => decreaseQuantity(item.id, item.size)}
+                      className="px-2 border rounded"
+                    >
+                      -
+                    </button>
 
-                        <span>{item.quantity}</span>
+                    <span>{item.quantity}</span>
 
-                        <button
-                        onClick={() => increaseQuantity(item.id, item.size)}
-                        className="px-2 border rounded"
-                        >
-                        +
-                        </button>
-                    </div>
+                    <button
+                      onClick={() => increaseQuantity(item.id, item.size)}
+                      className="px-2 border rounded"
+                    >
+                      +
+                    </button>
+                  </div>
 
-                    {/* Total */}
-                    <p className="text-sm font-bold text-green-600">
-                        R$ {(item.price * item.quantity).toFixed(2)}
-                    </p>
+                  {/* Total */}
+                  <p className="text-sm font-bold text-green-600">
+                    R$ {(item.price * item.quantity).toFixed(2)}
+                  </p>
 
                 </div>
 

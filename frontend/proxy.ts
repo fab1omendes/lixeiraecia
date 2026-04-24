@@ -1,14 +1,27 @@
-import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export const proxy = withAuth({
-  pages: {
-    signIn: "/login",
-  },
-});
+export async function proxy(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const isAuth = !!token;
+  
+  const pathname = req.nextUrl.pathname;
+  
+  const isPublicPage = pathname === "/" || pathname === "/login" || pathname === "/signup";
+  
+  if (isAuth && isPublicPage) {
+    return NextResponse.redirect(new URL("/store", req.url));
+  }
+  
+  const isPrivatePage = pathname.startsWith("/profile") || pathname.startsWith("/orders");
+  if (!isAuth && isPrivatePage) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: [
-    "/profile/:path*",
-    "/orders/:path*",
-  ],
+  matcher: ["/", "/login", "/signup", "/profile/:path*", "/orders/:path*"],
 };
