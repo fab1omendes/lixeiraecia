@@ -36,9 +36,9 @@ export const authOptions = {
             const errorData = await res.json();
             throw new Error(errorData.detail || "Erro de login");
           }
-        } catch (e) {
+        } catch (e: any) {
           // Repassa o erro exatamente como o backend devolveu para aparecer no Frontend
-          throw new Error(e.message);
+          throw new Error(e.message || "Erro inesperado");
         }
       },
     }),
