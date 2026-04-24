@@ -1,0 +1,14 @@
+cd api
+rm -rf */migrations
+
+
+find . -path "*/migrations/*.pyc" -delete
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+
+
+
+mkdir -p api/users/migrations
+touch api/users/migrations/__init__.py
+python manage.py makemigrations users
+python manage.py migrate users
+python manage.py migrate

@@ -26,14 +26,16 @@ class CustomUser(AbstractUser):
 
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255)
+    avatar = models.URLField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     cpf = models.CharField(max_length=14, blank=True, null=True)
+    birthdate = models.DateField(blank=True, null=True)
 
     USER_TYPE_CHOICES = [
-        ('P', 'Pessoa Física'),
-        ('J', 'Pessoa Jurídica'),
+        ('pf', 'Pessoa Física'),
+        ('pj', 'Pessoa Jurídica'),
     ]
-    user_type = models.CharField(max_length=1, choices=USER_TYPE_CHOICES)
+    user_type = models.CharField(max_length=2, choices=USER_TYPE_CHOICES)
 
     company_name = models.CharField(max_length=255, blank=True, null=True)
     company_cnpj = models.CharField(max_length=18, blank=True, null=True)

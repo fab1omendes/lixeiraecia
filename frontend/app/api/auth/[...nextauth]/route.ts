@@ -64,18 +64,27 @@ export const authOptions = {
     },
     async signIn({ user, account }: any) {
       if (account?.provider === "google") {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+        if (!apiUrl) {
+          console.error("ERRO: NEXT_PUBLIC_API_URL não está definida no ambiente.");
+          return false;
+        }
 
         try {
-          // Verificar se a conta google já é cadastrada via fetch usando GET
-          const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/user/check-email?email=" + user.email);
-          const data = await res.json();
+          const checkUrl = `${apiUrl}/user/check-email?email=${user.email}`;
+          const res = await fetch(checkUrl);
 
-          //Se existir API devolve {"exists = true"}
+          if (!res.ok) {
+            console.error(`Erro ao verificar e-mail. Status: ${res.status} em ${checkUrl}`);
+            return false;
+          }
+
+          const data = await res.json();
 
           if (data.exists) {
             return true;
           } else {
-            // Se não existir, cria o usuário passando os dados via query params
             const urlParams = new URLSearchParams({
               name: user.name || '',
               email: user.email || '',
@@ -83,14 +92,11 @@ export const authOptions = {
             });
             return `/signup?${urlParams.toString()}`;
           }
-        } catch (error) {
-          console.error("Erro ao conferir e-mail: ", error)
-          return false; //Bloqueia logine  mostra a tela de erro
+        } catch (error: any) {
+          console.error("Erro ao conferir e-mail no backend: ", error.message)
+          return false;
         }
-
       }
-
-      // Se for login normal via Credentials, deixa continuar (retorna true)
       return true;
     },
   },
