@@ -1,15 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, ShoppingCart, User } from "lucide-react";
+import { Menu, X, ShoppingCart, User, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CartDrawer } from "./cart-drawer";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 import { SearchIcon } from "lucide-react";
 
 
+import { useSession, signOut } from "next-auth/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut } from "lucide-react";
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
 
   return (
 
@@ -59,9 +65,37 @@ export function Navbar() {
 
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => window.location.href = "/login"}>
-            <User size={18} />
-          </Button>
+          {session ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="rounded-full overflow-hidden w-9 h-9 border focus:outline-none focus:ring-2 focus:ring-offset-2">
+                  <Avatar className="w-full h-full">
+                    <AvatarImage src={session.user?.image || ""} />
+                    <AvatarFallback>{session.user?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                  </Avatar>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="end">
+                <div className="flex flex-col mb-2 px-2 pb-2 border-b gap-1">
+                  <span className="font-semibold text-sm truncate">{session.user?.name || "Sua Conta"}</span>
+                  <span className="text-xs text-muted-foreground truncate">{session.user?.email || ""}</span>
+                </div>
+                <Button variant="ghost" className="w-full justify-start text-sm h-9" onClick={() => window.location.href = "/purchases"}>
+                  <Package className="mr-2" size={16} /> Minhas Compras
+                </Button>
+                <Button variant="ghost" className="w-full justify-start text-sm h-9" onClick={() => window.location.href = "/profile"}>
+                  <User className="mr-2" size={16} /> Meu Perfil
+                </Button>
+                <Button variant="ghost" className="w-full justify-start text-sm h-9 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => signOut({ callbackUrl: '/' })}>
+                  <LogOut className="mr-2" size={16} /> Sair
+                </Button>
+              </PopoverContent>
+            </Popover>
+          ) : (
+              <Button variant="ghost" size="icon" onClick={() => window.location.href = "/login"}>
+                <User size={18} />
+              </Button>
+          )}
           <CartDrawer />
 
           {/* Mobile botão */}

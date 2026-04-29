@@ -16,10 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('api/', include('api.urls')), 
 
+    # Rota que gera o arquivo schema.yml
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Rota para o Swagger UI 
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema')),
+    # Opcional: Interface Redoc (alternativa visual)
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema')),
 ]

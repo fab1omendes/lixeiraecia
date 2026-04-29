@@ -35,7 +35,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>();
 
   const searchParams = useSearchParams();
   const DefaultAvatar = searchParams.get('image');
@@ -110,7 +110,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                     id="date"
                     className="justify-start font-normal"
                   >
-                    {date ? date.toLocaleDateString() : "Selecione a data"}
+                    {date ? new Intl.DateTimeFormat('pt-BR').format(date) : "Selecione a data"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent
@@ -191,7 +191,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
             {/* Password */}
             <Field>
               <FieldLabel htmlFor="password">Senha</FieldLabel>
-              <Input id="password" type="password" required />
+              <Input id="password" name="password" type="password" required />
               <FieldDescription>
                 Deve ter pelo menos 8 caracteres.
               </FieldDescription>
@@ -200,7 +200,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
               <FieldLabel htmlFor="confirm-password">
                 Confirmar Senha
               </FieldLabel>
-              <Input id="confirm-password" type="password" required />
+              <Input id="confirm-password" name="confirm-password" type="password" required />
               <FieldDescription>Por favor, confirme sua senha.</FieldDescription>
             </Field>
             <FieldGroup>
