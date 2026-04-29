@@ -1,13 +1,14 @@
 import { Navbar } from "@/components/navbar";
 import { ProductGrid } from "@/components/product-grid";
 import { Footer } from "@/components/footer";
+import { Suspense } from "react";
 
-export default function Home() {
+export default function Store() {
   return (
-    <>
-      <Navbar />
-      <ProductGrid />
-      <Footer />
-    </>
-  );
+    <main className="flex-1 w-full flex flex-col p-6 md:p-10">
+      <Suspense fallback={<div className="flex items-center justify-center p-8">Carregando...</div>}>
+        <ProductGrid />
+      </Suspense>
+    </main>
+  )
 }

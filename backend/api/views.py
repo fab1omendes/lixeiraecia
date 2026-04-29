@@ -23,6 +23,49 @@ def check_email(request):
     exists = CustomUser.objects.filter(email=email).exists()
     return Response({'exists': exists})
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def signup(request):
+    data = request.data
+    
+    if CustomUser.objects.filter(email=data.get('email')).exists():
+        return Response({'detail': 'Email já cadastrado'}, status=400)
+    
+    try:
+        user = CustomUser.objects.create_user(
+            email=data.get('email'),
+            password=data.get('password'),
+            name=data.get('name', ''),
+            phone=data.get('phone', ''),
+            cpf=data.get('cpf', ''),
+            birthdate=data.get('birth_date') or None,
+            user_type=data.get('user_type', 'pf'),
+            company_name=data.get('company_name', ''),
+            company_cnpj=data.get('company_cnpj', '')
+        )
+        
+        # Opcional: Salvar o endereço principal se enviado
+        principal_address = data.get('principal_address')
+        if principal_address:
+            Address.objects.create(
+                user=user,
+                name='Endereço Principal',
+                street=principal_address,
+                number=data.get('principal_address_number', ''),
+                complement=data.get('principal_address_complement', ''),
+                neighborhood=data.get('principal_address_neighborhood', ''),
+                city=data.get('principal_city', ''),
+                state=data.get('principal_state', ''),
+                zip_code=data.get('principal_zip_code', ''),
+                is_default=True
+            )
+            
+    except Exception as e:
+        return Response({'detail': str(e)}, status=400)
+        
+    return Response({'id': user.id, 'email': user.email}, status=201)
+
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -44,11 +87,19 @@ def create_user_google(request):
     })
 
 
+
+from django.contrib.auth.models import BaseUserManager
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
+
+    if email:
+        email = BaseUserManager.normalize_email(email)
+
+    print(f"DEBUG LOGIN: email='{email}', password='{password}'")
 
     user = authenticate(request, email=email, password=password)
 
@@ -127,10 +178,15 @@ def list_addresses(request):
             'name': a.name,
             'street': a.street,
             'number': a.number,
+            'complement': a.complement,
+            'neighborhood': a.neighborhood,
             'city': a.city,
             'state': a.state,
             'zip_code': a.zip_code,
-            'is_default': a.is_default
+            'is_default': a.is_default,
+            'is_billing': a.is_billing,
+            'contact_name': a.user.name,
+            'contact_phone': a.user.phone
         })
 
     return Response(data)
@@ -141,19 +197,78 @@ def list_addresses(request):
 def create_address(request):
     data = request.data
 
+    is_default = data.get('is_default', False)
+    is_billing = data.get('is_billing', False)
+
+    if is_default:
+        Address.objects.filter(user=request.user).update(is_default=False)
+    if is_billing:
+        Address.objects.filter(user=request.user).update(is_billing=False)
+
+    # First address is implicitly billing if none exists
+    if not Address.objects.filter(user=request.user).exists():
+        is_billing = True
+        is_default = True
+
     address = Address.objects.create(
         user=request.user,
-        name=data['name'],
-        street=data['street'],
-        number=data['number'],
-        neighborhood=data['neighborhood'],
-        city=data['city'],
-        state=data['state'],
-        zip_code=data['zip_code'],
-        is_default=data.get('is_default', False)
+        name=data.get('name', 'Endereço'),
+        street=data.get('street', ''),
+        number=data.get('number', ''),
+        complement=data.get('complement', ''),
+        neighborhood=data.get('neighborhood', ''),
+        city=data.get('city', ''),
+        state=data.get('state', ''),
+        zip_code=data.get('zip_code', ''),
+        is_default=is_default,
+        is_billing=is_billing
     )
 
-    return Response({'id': address.id})
+    return Response({'id': address.id}, status=201)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def edit_address(request, pk):
+    try:
+        address = Address.objects.get(id=pk, user=request.user)
+    except Address.DoesNotExist:
+        return Response({'detail': 'Endereço não encontrado.'}, status=404)
+
+    data = request.data
+    is_default = data.get('is_default', address.is_default)
+    is_billing = data.get('is_billing', address.is_billing)
+
+    if is_default and not address.is_default:
+        Address.objects.filter(user=request.user).update(is_default=False)
+    if is_billing and not address.is_billing:
+        Address.objects.filter(user=request.user).update(is_billing=False)
+
+    address.name = data.get('name', address.name)
+    address.street = data.get('street', address.street)
+    address.number = data.get('number', address.number)
+    address.complement = data.get('complement', address.complement)
+    address.neighborhood = data.get('neighborhood', address.neighborhood)
+    address.city = data.get('city', address.city)
+    address.state = data.get('state', address.state)
+    address.zip_code = data.get('zip_code', address.zip_code)
+    address.is_default = is_default
+    address.is_billing = is_billing
+    address.save()
+
+    return Response({'detail': 'Endereço atualizado.'})
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_address(request, pk):
+    try:
+        address = Address.objects.get(id=pk, user=request.user)
+        if address.is_billing:
+             return Response({'detail': 'Não é possível excluir o endereço de faturamento.'}, status=400)
+        address.delete()
+        return Response(status=204)
+    except Address.DoesNotExist:
+        return Response({'detail': 'Endereço não encontrado.'}, status=404)
+
 
 
 # =========================

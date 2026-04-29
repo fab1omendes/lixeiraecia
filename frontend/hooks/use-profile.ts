@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 
-export function useSignup() {
+export function useProfile() {
   const [loading, setLoading] = useState(false);
 
   // O customData recebe as coisas que não estão nos inputs nativos, como a 'date' do calendário
@@ -56,7 +56,7 @@ export function useSignup() {
     };
 
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/user/signup", {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSend)

@@ -71,6 +71,7 @@ class Address(models.Model):
     zip_code = models.CharField(max_length=9)
 
     is_default = models.BooleanField(default=False) # Se for True, será o endereço principal
+    is_billing = models.BooleanField(default=False) # Se for True, será o endereço de faturamento
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

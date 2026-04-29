@@ -9,6 +9,7 @@ export const proxy = withAuth({
 export const config = {
   matcher: [
     "/profile/:path*",
-    "/orders/:path*",
+    "/purchases/:path*",
+    "/painel/:path*",
   ],
 };

@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     # auth
+    path('user/signup', views.signup),
     path('user/check-email', views.check_email),
     path('user/google', views.create_user_google),
     path('user/auth', views.login),
@@ -17,6 +18,8 @@ urlpatterns = [
     # address
     path('addresses', views.list_addresses),
     path('addresses/create', views.create_address),
+    path('addresses/<int:pk>/edit', views.edit_address),
+    path('addresses/<int:pk>/delete', views.delete_address),
 
     # order
     path('orders/create', views.create_order),

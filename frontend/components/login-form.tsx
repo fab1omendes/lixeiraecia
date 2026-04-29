@@ -49,7 +49,7 @@ export function LoginForm({
       setErrorMsg(res.error);
     } else if (res?.ok) {
       // Já que desligamos o redirecionamento automático, fomos nós que precisamos fazer o "push" agora:
-      window.location.href = "/sample";
+      window.location.href = "/profile";
     }
     setLoading(false);
   }
@@ -77,7 +77,7 @@ export function LoginForm({
                 <Button
                   variant="outline"
                   type="button"
-                  onClick={() => signIn("google", { callbackUrl: "/sample" })}
+                  onClick={() => signIn("google", { callbackUrl: "/profile" })}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
@@ -135,7 +135,7 @@ export function LoginForm({
                 <button
                   type="button"
                   className="underline underline-offset-4"
-                  onClick={() => signIn("google", { callbackUrl: "/sample" })}
+                  onClick={() => signIn("google", { callbackUrl: "/profile" })}
                 >
                   Cadastre-se
                 </button>
