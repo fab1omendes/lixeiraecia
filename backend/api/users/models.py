@@ -77,8 +77,15 @@ class Address(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        # Force first address to be default and billing
+        if not Address.objects.filter(user=self.user).exclude(id=self.id).exists():
+            self.is_default = True
+            self.is_billing = True
+
         if self.is_default:
             Address.objects.filter(user=self.user).exclude(id=self.id).update(is_default=False)
+        if self.is_billing:
+            Address.objects.filter(user=self.user).exclude(id=self.id).update(is_billing=False)
         super().save(*args, **kwargs)
     
     def __str__(self):

@@ -1,9 +1,10 @@
 from django.contrib.auth import authenticate
-from django.db import transaction
+from django.db import transaction, models as django_models
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth.models import BaseUserManager
 
 from api.users.models import CustomUser, Address
 from api.products.models import Product, Category
@@ -16,6 +17,24 @@ from rest_framework.authtoken.models import Token
 # 🔐 AUTH
 # =========================
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    user = request.user
+    data = request.data
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    if not current_password or not new_password:
+        return Response({'detail': 'Senha atual e nova senha são obrigatórias'}, status=400)
+    
+    if not user.check_password(current_password):
+        return Response({'detail': 'Senha atual incorreta'}, status=400)
+    
+    user.set_password(new_password)
+    user.save()
+    return Response({'detail': 'Senha alterada com sucesso'})
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def check_email(request):
@@ -27,7 +46,6 @@ def check_email(request):
 @permission_classes([AllowAny])
 def signup(request):
     data = request.data
-    
     if CustomUser.objects.filter(email=data.get('email')).exists():
         return Response({'detail': 'Email já cadastrado'}, status=400)
     
@@ -88,7 +106,6 @@ def create_user_google(request):
 
 
 
-from django.contrib.auth.models import BaseUserManager
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -119,15 +136,34 @@ def login(request):
 # 👤 USER
 # =========================
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def me(request):
     user = request.user
 
+    if request.method in ['PUT', 'PATCH']:
+        data = request.data
+        user.avatar = data.get('avatar', user.avatar)
+        user.name = data.get('name', user.name)
+        user.phone = data.get('phone', user.phone)
+        user.cpf = data.get('cpf', user.cpf)
+        user.birthdate = data.get('birthdate', user.birthdate)
+        user.user_type = data.get('user_type', user.user_type)
+        user.company_name = data.get('company_name', user.company_name)
+        user.company_cnpj = data.get('company_cnpj', user.company_cnpj)
+        user.save()
+
     return Response({
         'id': user.id,
         'email': user.email,
-        'name': user.name
+        'avatar': user.avatar,
+        'name': user.name,
+        'phone': user.phone,
+        'cpf': user.cpf,
+        'birthdate': user.birthdate,
+        'user_type': user.user_type,
+        'company_name': user.company_name,
+        'company_cnpj': user.company_cnpj,
     })
 
 
@@ -169,7 +205,7 @@ def list_categories(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_addresses(request):
-    addresses = request.user.addresses.all()
+    addresses = request.user.addresses.all().order_by('id')
 
     data = []
     for a in addresses:
@@ -228,6 +264,7 @@ def create_address(request):
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
+@transaction.atomic
 def edit_address(request, pk):
     try:
         address = Address.objects.get(id=pk, user=request.user)
@@ -235,39 +272,59 @@ def edit_address(request, pk):
         return Response({'detail': 'Endereço não encontrado.'}, status=404)
 
     data = request.data
-    is_default = data.get('is_default', address.is_default)
-    is_billing = data.get('is_billing', address.is_billing)
+    
+    # Update fields if present in data
+    if 'name' in data: address.name = data['name']
+    if 'street' in data: address.street = data['street']
+    if 'number' in data: address.number = data['number']
+    if 'complement' in data: address.complement = data['complement']
+    if 'neighborhood' in data: address.neighborhood = data['neighborhood']
+    if 'city' in data: address.city = data['city']
+    if 'state' in data: address.state = data['state']
+    if 'zip_code' in data: address.zip_code = data['zip_code']
+    
+    # Toggle bits
+    if 'is_default' in data:
+        address.is_default = data['is_default']
+    if 'is_billing' in data:
+        address.is_billing = data['is_billing']
 
-    if is_default and not address.is_default:
-        Address.objects.filter(user=request.user).update(is_default=False)
-    if is_billing and not address.is_billing:
-        Address.objects.filter(user=request.user).update(is_billing=False)
-
-    address.name = data.get('name', address.name)
-    address.street = data.get('street', address.street)
-    address.number = data.get('number', address.number)
-    address.complement = data.get('complement', address.complement)
-    address.neighborhood = data.get('neighborhood', address.neighborhood)
-    address.city = data.get('city', address.city)
-    address.state = data.get('state', address.state)
-    address.zip_code = data.get('zip_code', address.zip_code)
-    address.is_default = is_default
-    address.is_billing = is_billing
-    address.save()
+    try:
+        address.save()
+    except Exception as e:
+        return Response({'detail': f'Erro ao salvar: {str(e)}'}, status=400)
 
     return Response({'detail': 'Endereço atualizado.'})
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
+@transaction.atomic
 def delete_address(request, pk):
     try:
         address = Address.objects.get(id=pk, user=request.user)
-        if address.is_billing:
-             return Response({'detail': 'Não é possível excluir o endereço de faturamento.'}, status=400)
+        
+        was_default = address.is_default
+        was_billing = address.is_billing
+        
         address.delete()
+        
+        # After deletion, check if we need to promote another address
+        others = Address.objects.filter(user=request.user)
+        if others.exists():
+            new_primary = others.first()
+            if was_default and not others.filter(is_default=True).exists():
+                new_primary.is_default = True
+            if was_billing and not others.filter(is_billing=True).exists():
+                new_primary.is_billing = True
+            new_primary.save()
+            
         return Response(status=204)
     except Address.DoesNotExist:
         return Response({'detail': 'Endereço não encontrado.'}, status=404)
+    except django_models.ProtectedError:
+        return Response({'detail': 'Este endereço está vinculado a pedidos existentes e não pode ser excluído.'}, status=400)
+    except Exception as e:
+        return Response({'detail': str(e)}, status=500)
 
 
 

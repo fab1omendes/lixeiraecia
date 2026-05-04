@@ -43,9 +43,77 @@ export function useAddresses() {
     }
   }, [token]);
 
+  const updateAddress = async (id: number, data: any) => {
+    if (!token) return { success: false, error: "No token" };
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/${id}/edit`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        await fetchAddresses();
+        return { success: true };
+      } else {
+        const err = await res.json();
+        return { success: false, error: err };
+      }
+    } catch (e) {
+      return { success: false, error: e };
+    }
+  };
+
+  const deleteAddress = async (id: number) => {
+    if (!token) return { success: false, error: "No token" };
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/${id}/delete`, {
+        method: "DELETE",
+        headers: { "Authorization": `Token ${token}` },
+      });
+      if (res.ok) {
+        await fetchAddresses();
+        return { success: true };
+      } else {
+        const err = await res.json();
+        return { success: false, error: err };
+      }
+    } catch (e) {
+      return { success: false, error: e };
+    }
+  };
+
+  const createAddress = async (data: any) => {
+    if (!token) return { success: false, error: "No token" };
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        await fetchAddresses();
+        return { success: true };
+      } else {
+        const err = await res.json();
+        return { success: false, error: err };
+      }
+    } catch (e) {
+      return { success: false, error: e };
+    }
+  };
+
   useEffect(() => {
     if (token) fetchAddresses();
   }, [token, fetchAddresses]);
 
-  return { addresses, loading, refetch: fetchAddresses, token };
+  return {
+    addresses,
+    loading,
+    refetch: fetchAddresses,
+    token,
+    updateAddress,
+    deleteAddress,
+    createAddress,
+    requiresAttention: !loading && addresses.length === 0
+  };
 }
