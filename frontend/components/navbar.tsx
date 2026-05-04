@@ -11,11 +11,17 @@ import { SearchIcon } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfile } from "@/hooks/use-profile";
 import { LogOut } from "lucide-react";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const { data: session } = useSession();
+  const { profile } = useProfile();
+
+  const avatar = profile?.avatar || "";
+  const name = profile?.name || "";
+  const email = profile?.email || "";
 
   return (
 
@@ -70,15 +76,15 @@ export function Navbar() {
               <PopoverTrigger asChild>
                 <button className="rounded-full overflow-hidden w-9 h-9 border focus:outline-none focus:ring-2 focus:ring-offset-2">
                   <Avatar className="w-full h-full">
-                    <AvatarImage src={session.user?.image || ""} />
-                    <AvatarFallback>{session.user?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                    <AvatarImage src={avatar || undefined} />
+                    <AvatarFallback>{name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                   </Avatar>
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-56 p-2" align="end">
                 <div className="flex flex-col mb-2 px-2 pb-2 border-b gap-1">
-                  <span className="font-semibold text-sm truncate">{session.user?.name || "Sua Conta"}</span>
-                  <span className="text-xs text-muted-foreground truncate">{session.user?.email || ""}</span>
+                  <span className="font-semibold text-sm truncate">{name || "Sua Conta"}</span>
+                  <span className="text-xs text-muted-foreground truncate">{email || ""}</span>
                 </div>
                 <Button variant="ghost" className="w-full justify-start text-sm h-9" onClick={() => window.location.href = "/purchases"}>
                   <Package className="mr-2" size={16} /> Minhas Compras

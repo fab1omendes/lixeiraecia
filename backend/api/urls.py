@@ -10,6 +10,7 @@ urlpatterns = [
 
     # user
     path('user/me', views.me),
+    path('user/change-password', views.change_password),
 
     # products
     path('products', views.list_products),

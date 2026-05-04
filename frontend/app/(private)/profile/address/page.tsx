@@ -12,35 +12,26 @@ import { useAddresses } from "@/hooks/use-addresses"
 
 export default function ProfileAddress() {
   const router = useRouter()
-  const { addresses, loading, refetch, token } = useAddresses()
+  const { addresses, loading, updateAddress, deleteAddress } = useAddresses()
 
-  // Sorter to keep billing address first
-  const sortedAddresses = [...addresses].sort((a, b) => b.is_billing === a.is_billing ? 0 : b.is_billing ? 1 : -1)
+  const onToggleDefault = async (id: number) => {
+    const res = await updateAddress(id, { is_default: true });
+    if (!res.success) alert("Erro ao atualizar endereço principal.");
+  };
 
-  const handleUpdateAddress = async (id: number, data: any) => {
-    if (!token) return;
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/${id}/edit`, {
-         method: "PUT",
-         headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` },
-         body: JSON.stringify(data),
-      })
-      refetch()
-    } catch(e) { console.error(e) }
-  }
+  const onToggleBilling = async (id: number) => {
+    const res = await updateAddress(id, { is_billing: true });
+    if (!res.success) alert("Erro ao atualizar endereço de faturamento.");
+  };
 
-  const handleDelete = async (id: number) => {
-    if (!token) return;
+  const onDelete = async (id: number) => {
     if (confirm("Tem certeza que deseja excluir esse endereço?")) {
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/${id}/delete`, {
-           method: "DELETE",
-           headers: { "Authorization": `Token ${token}` },
-        })
-        refetch()
-      } catch(e) { console.error(e) }
+      const res = await deleteAddress(id);
+      if (!res.success) {
+        alert(res.error?.detail || "Erro ao excluir endereço. Verifique se existem pedidos vinculados.");
+      }
     }
-  }
+  };
 
   return (
     <main className="min-h-screen bg-[#F5F5F5] flex justify-center p-4">
@@ -76,44 +67,27 @@ export default function ProfileAddress() {
              </div>
           )}
 
-          {sortedAddresses.map((address) => (
-            <Card key={address.id} className="p-0 overflow-hidden bg-white shadow-sm border-0 border-b relative rounded-lg">
-               <div className="flex flex-col md:flex-row">
+          {addresses.map((address) => (
+            <Card key={address.id} className="p-0 overflow-hidden bg-white shadow-sm border border-gray-100 relative rounded-lg">
+              <div className="flex flex-col md:flex-row min-h-[160px]">
+                {/* Main Content */}
                  <div className="p-5 flex-1 space-y-2">
+                  <div className="flex flex-col gap-1">
+                    <p className="font-semibold text-gray-900 text-[16px]">
+                      {address.street} {address.number} {address.complement && <span className="font-normal text-gray-700">, {address.complement}</span>}
+                    </p>
+                    <p className="text-[14px] text-gray-500">
+                      CEP {address.zip_code} - {address.city} - {address.state}
+                    </p>
+                  </div>
                    
-                   <div className="flex justify-between items-start">
-                     <p className="font-semibold text-gray-900 text-[15px]">
-                       {address.street} {address.number} {address.complement && <span className="font-normal text-gray-800">{address.complement}</span>}
-                     </p>
-                     
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-gray-100">
-                            <span className="sr-only">Abrir menu</span>
-                            <MoreVertical className="h-5 w-5 text-gray-400" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem onClick={() => router.push(`/profile/address/edit/${address.id}`)}>
-                            Editar
-                          </DropdownMenuItem>
-                          {!address.is_billing && (
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => handleDelete(address.id)}>
-                              Excluir
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                     </DropdownMenu>
-                   </div>
-                   
-                   <p className="text-[14px] text-gray-500">
-                     CEP {address.zip_code} - {address.city} - {address.state}
-                   </p>
-                   
-                   <div className="flex items-center gap-2 pt-2">
+                  <div className="flex items-center gap-2 pt-1">
                      <p className="text-[14px] text-gray-500">{address.name}</p>
                      {address.is_billing && (
-                       <Badge variant="secondary" className="bg-gray-100/50 text-gray-500 hover:bg-gray-100 border text-xs font-medium px-2 shadow-none">Faturamento (Obrigatório)</Badge>
+                      <Badge variant="secondary" className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-100 text-[11px] font-semibold px-2 py-0 h-5 shadow-none">Faturamento (Obrigatório)</Badge>
+                    )}
+                    {address.is_default && (
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 border-gray-200 text-[11px] font-semibold px-2 py-0 h-5 shadow-none">Principal</Badge>
                      )}
                    </div>
                    
@@ -129,35 +103,54 @@ export default function ProfileAddress() {
                  </div>
 
                  {/* Switches Side */}
-                 <div className="border-t border-gray-100 md:border-t-0 md:border-l md:border-gray-50 p-4 flex flex-col items-center justify-center gap-4 min-w-[150px] bg-white md:bg-gray-50/10">
-                    <div className="flex flex-col items-center gap-2 w-full">
-                       <span className="text-[13px] font-medium text-gray-400 text-center leading-tight">
-                         {address.is_default ? "Endereço Principal" : "Tornar Principal"}
+                <div className="border-t border-gray-100 md:border-t-0 md:border-l p-4 flex flex-row md:flex-col items-center justify-center gap-6 min-w-[180px] bg-gray-50/20">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      {address.is_default ? "Principal" : "Tornar Principal"}
                        </span>
                        <Switch 
                           checked={address.is_default}
-                          onCheckedChange={(checked) => {
-                            if (checked) handleUpdateAddress(address.id, { is_default: true })
-                          }}
+                      onCheckedChange={() => onToggleDefault(address.id)}
                           disabled={address.is_default}
-                          className="data-[state=checked]:bg-blue-500"
+                      className="data-[state=checked]:bg-blue-500 scale-90"
                        />
                     </div>
                     
-                    <div className="flex flex-col items-center gap-2 w-full pt-2 border-t border-gray-100">
-                       <span className="text-[13px] font-medium text-gray-400 text-center leading-tight">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                          {address.is_billing ? "Faturamento" : "Tornar Faturamento"}
                        </span>
                        <Switch 
                           checked={address.is_billing}
-                          onCheckedChange={(checked) => {
-                            if (checked) handleUpdateAddress(address.id, { is_billing: true })
-                          }}
+                      onCheckedChange={() => onToggleBilling(address.id)}
                           disabled={address.is_billing}
-                          className="data-[state=checked]:bg-blue-500"
+                      className="data-[state=checked]:bg-blue-500 scale-90"
                        />
                     </div>
                  </div>
+
+                {/* Actions Side (FAR RIGHT) */}
+                <div className="flex items-start p-4 bg-gray-50/20">
+                  <div className="flex gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-gray-100">
+                          <MoreVertical className="h-5 w-5 text-gray-400" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem className="font-medium" onSelect={() => router.push(`/profile/address/edit/${address.id}`)}>
+                          Editar
+                        </DropdownMenuItem>
+                        {addresses.length > 1 && (
+                          <DropdownMenuItem className="text-red-600 focus:text-red-600 font-medium" onSelect={() => onDelete(address.id)}>
+                            Excluir
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
                </div>
             </Card>
           ))}

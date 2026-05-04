@@ -1,21 +1,22 @@
 'use client'
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { useState } from "react"
+import { useState, use } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MapPin, Loader2 } from "lucide-react"
+import { MapPin, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
 import { useEffect } from "react"
+import { useAddresses } from "@/hooks/use-addresses"
 
-export default function EditAddress({ params }: { params: { id: string } }) {
+export default function EditAddress({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
-  const { data: session } = useSession()
-  const token = (session as any)?.accessToken
+  const { addresses, loading: loadingAddresses, updateAddress } = useAddresses()
   const [loading, setLoading] = useState(false)
-  const [loadingInitial, setLoadingInitial] = useState(true)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
 
   const [formData, setFormData] = useState({
     cep: "",
@@ -28,28 +29,21 @@ export default function EditAddress({ params }: { params: { id: string } }) {
   })
 
   useEffect(() => {
-    if (!token) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses`, {
-      headers: { "Authorization": `Token ${token}` }
-    })
-    .then(r => r.json())
-    .then(data => {
-      const addr = data.find((a: any) => a.id.toString() === params.id)
-      if (addr) {
-        setFormData({
-          cep: addr.zip_code,
-          street: addr.street,
-          number: addr.number === "S/N" ? "" : addr.number,
-          complement: addr.complement,
-          name: addr.contact_name,
-          phone: addr.contact_phone,
-          withoutNumber: addr.number === "S/N",
-          ...( { _city: addr.city, _state: addr.state, _neighborhood: addr.neighborhood } as any )
-        })
-      }
-      setLoadingInitial(false)
-    })
-  }, [token, params.id])
+    if (loadingAddresses) return;
+    const addr = addresses.find((a: any) => a.id.toString() === id)
+    if (addr) {
+      setFormData({
+        cep: addr.zip_code,
+        street: addr.street,
+        number: addr.number === "S/N" ? "" : addr.number,
+        complement: addr.complement,
+        name: addr.contact_name,
+        phone: addr.contact_phone,
+        withoutNumber: addr.number === "S/N",
+        ...({ _city: addr.city, _state: addr.state, _neighborhood: addr.neighborhood } as any)
+      })
+    }
+  }, [id, addresses, loadingAddresses])
 
   const handleCepFocusOut = async () => {
     if (formData.cep.length >= 8) {
@@ -64,31 +58,28 @@ export default function EditAddress({ params }: { params: { id: string } }) {
   }
 
   const handleSave = async () => {
-    if (!token) return;
     setLoading(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/${params.id}/edit`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` },
-        body: JSON.stringify({
-          street: formData.street,
-          number: formData.withoutNumber ? "S/N" : formData.number,
-          complement: formData.complement,
-          zip_code: formData.cep,
-          city: (formData as any)._city || "São Paulo",
-          state: (formData as any)._state || "SP",
-          neighborhood: (formData as any)._neighborhood || "Centro",
-        })
-      });
-      if (res.ok) {
+    setError("");
+    setSuccess(false);
+
+    const res = await updateAddress(parseInt(id), {
+      street: formData.street,
+      number: formData.withoutNumber ? "S/N" : formData.number,
+      complement: formData.complement,
+      zip_code: formData.cep,
+      city: (formData as any)._city || "São Paulo",
+      state: (formData as any)._state || "SP",
+      neighborhood: (formData as any)._neighborhood || "Centro",
+    })
+
+    if (res.success) {
+      setSuccess(true);
+      setTimeout(() => {
         router.push("/profile/address")
-      } else {
-        alert("Erro ao salvar endereço.")
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
+      }, 2000);
+    } else {
+      setError("Erro ao salvar endereço. Verifique os dados e tente novamente.");
+      setLoading(false);
     }
   }
 
@@ -122,6 +113,21 @@ export default function EditAddress({ params }: { params: { id: string } }) {
 
         <div className="bg-white rounded-lg shadow-sm p-6 md:p-8 relative">
           
+          {/* Alertas */}
+          {success && (
+            <div className="mb-6 flex items-center gap-3 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <p className="font-medium">Endereço atualizado com sucesso! Redirecionando...</p>
+            </div>
+          )}
+
+          {error && !success && (
+            <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <p className="font-medium">{error}</p>
+            </div>
+          )}
+
           <div className="space-y-6 max-w-2xl">
             {/* CEP */}
             <div className="flex flex-col gap-1 relative">
@@ -223,9 +229,22 @@ export default function EditAddress({ params }: { params: { id: string } }) {
               </div>
             </div>
             
-            <div className="flex justify-end pt-4">
-              <Button onClick={handleSave} disabled={loading || loadingInitial} className="bg-blue-500 hover:bg-blue-600 min-w-[120px] h-12 text-sm font-semibold">
-                 {loading ? "Salvando..." : "Salvar"}
+            <div className="flex justify-center pt-4">
+              <Button
+                onClick={handleSave}
+                disabled={loading || loadingAddresses || success}
+                className="bg-blue-500 hover:bg-blue-600 min-w-[160px] h-12 font-semibold disabled:opacity-70 transition-all text-white"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : success ? (
+                  "Salvo!"
+                ) : (
+                  "Salvar"
+                )}
               </Button>
             </div>
 

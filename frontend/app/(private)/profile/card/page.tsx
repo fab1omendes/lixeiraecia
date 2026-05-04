@@ -27,7 +27,7 @@ export default function ProfileCard() {
         <div className="mb-8 mt-6">
           <h1 className="text-xl font-semibold tracking-tight">Meus Cartões</h1>
         </div>
-        <ProfileForm />
+        Em construção...
       </div>
     </main>
   )

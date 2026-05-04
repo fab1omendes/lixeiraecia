@@ -43,11 +43,11 @@ const sections = [
     title: "Segurança",
     items: [
       {
-        title: "Privacidade",
+        title: "Segurança",
         description: "Configurações de segurança",
         icon: ShieldCheck,
         color: "bg-red-100 text-red-600",
-        href: "/profile/privacy",
+        href: "/profile/security",
       },
     ],
   },
@@ -55,7 +55,7 @@ const sections = [
 
 export default function Profile() {
   const router = useRouter()
-  const { addresses, loading } = useAddresses();
+  const { addresses, loading, requiresAttention } = useAddresses();
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex justify-center p-4">
@@ -111,7 +111,7 @@ export default function Profile() {
                             <div className="flex flex-col">
                               <CardTitle className="text-sm font-semibold leading-tight flex items-center gap-2">
                                 {item.title}
-                                {item.title === "Endereços" && !loading && addresses.length === 0 && (
+                                {item.title === "Endereços" && requiresAttention && (
                                   <span className="text-red-500 flex items-center text-xs ml-2" title="Nenhum endereço cadastrado">
                                     <AlertTriangle className="w-4 h-4 mr-1" /> Requer atenção!
                                   </span>
