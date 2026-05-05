@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { MaskedInput } from "@/components/ui/masked-input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -35,7 +35,18 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
   const [date, setDate] = useState<Date | undefined>();
+  const [error, setError] = useState<string | null>(null);
+
+  const validatePassword = (pwd: string) => {
+    if (pwd.length < 8) return "A senha deve ter no mínimo 8 caracteres."
+    if (!/[A-Z]/.test(pwd)) return "A senha deve conter pelo menos uma letra maiúscula."
+    if (!/[0-9]/.test(pwd)) return "A senha deve conter pelo menos um número."
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) return "A senha deve conter pelo menos um caractere especial."
+    return null
+  }
 
   const searchParams = useSearchParams();
   const DefaultAvatar = searchParams.get('image');
@@ -47,6 +58,26 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
   // Criamos este wrapper local apenas para injetar o "date" (que é um state) pra dentro do helper do form
   const onSubmitWrapper = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirm-password") as string;
+
+    const pwdError = validatePassword(password);
+    if (pwdError) {
+      setError(pwdError);
+      passwordRef.current?.focus();
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem.");
+      confirmPasswordRef.current?.focus();
+      return;
+    }
+
     const formattedDate = date ? date.toISOString().split('T')[0] : null;
     handleSubmit(e, {
       birthDate: formattedDate,
@@ -67,6 +98,12 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
           <input type="hidden" name="avatar" value={DefaultAvatar || ""} />
           <input type="hidden" name="user_type" value={userType} />
+
+          {error && (
+            <div className="mb-4 flex items-center gap-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm animate-in fade-in slide-in-from-top-2">
+              <span className="font-medium">{error}</span>
+            </div>
+          )}
 
           <FieldGroup>
 
@@ -191,16 +228,16 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
             {/* Password */}
             <Field>
               <FieldLabel htmlFor="password">Senha</FieldLabel>
-              <Input id="password" name="password" type="password" required />
+              <Input id="password" name="password" type="password" ref={passwordRef} required />
               <FieldDescription>
-                Deve ter pelo menos 8 caracteres.
+                Mínimo 8 caracteres, 1 maiúscula, 1 número e 1 caractere especial.
               </FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="confirm-password">
                 Confirmar Senha
               </FieldLabel>
-              <Input id="confirm-password" name="confirm-password" type="password" required />
+              <Input id="confirm-password" name="confirm-password" type="password" ref={confirmPasswordRef} required />
               <FieldDescription>Por favor, confirme sua senha.</FieldDescription>
             </Field>
             <FieldGroup>

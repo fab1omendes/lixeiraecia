@@ -57,6 +57,7 @@ def signup(request):
             phone=data.get('phone', ''),
             cpf=data.get('cpf', ''),
             birthdate=data.get('birth_date') or None,
+            avatar=data.get('avatar'),
             user_type=data.get('user_type', 'pf'),
             company_name=data.get('company_name', ''),
             company_cnpj=data.get('company_cnpj', '')
@@ -89,19 +90,35 @@ def signup(request):
 @permission_classes([AllowAny])
 def create_user_google(request):
     data = request.data
+    email = data.get('email')
+    
+    if not email:
+        return Response({'detail': 'Email é obrigatório'}, status=400)
 
-    if CustomUser.objects.filter(email=data.get('email')).exists():
-        return Response({'detail': 'Usuário já existe'}, status=400)
-
-    user = CustomUser.objects.create_user(
-        email=data['email'],
-        name=data.get('name', ''),
-        user_type='P'
+    # Buscar ou criar usuário
+    user, created = CustomUser.objects.get_or_create(
+        email=email,
+        defaults={
+            'name': data.get('name', ''),
+            'avatar': data.get('image', ''), 
+            'user_type': 'pf'
+        }
     )
+
+    # Se já existir mas não tiver avatar/nome, podemos atualizar
+    if not created:
+        if not user.name: user.name = data.get('name', '')
+        if not user.avatar: user.avatar = data.get('image', '')
+        user.save()
+
+    token, _ = Token.objects.get_or_create(user=user)
 
     return Response({
         'id': user.id,
-        'email': user.email
+        'email': user.email,
+        'token': token.key,
+        'is_staff': user.is_staff,
+        'permissions': list(user.get_all_permissions()),
     })
 
 
@@ -128,7 +145,9 @@ def login(request):
     return Response({
         'id': user.id,
         'email': user.email,
-        'token': token.key
+        'token': token.key,
+        'is_staff': user.is_staff,
+        'permissions': list(user.get_all_permissions()),
     })
 
 
@@ -164,38 +183,9 @@ def me(request):
         'user_type': user.user_type,
         'company_name': user.company_name,
         'company_cnpj': user.company_cnpj,
+        'is_staff': user.is_staff,
+        'permissions': list(user.get_all_permissions()),
     })
-
-
-# =========================
-# 📦 PRODUCTS
-# =========================
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def list_products(request):
-    products = Product.objects.filter(is_active=True)
-
-    data = []
-    for p in products:
-        data.append({
-            'id': p.id,
-            'name': p.name,
-            'price': p.price,
-            'stock': p.stock,
-            'category': p.category.name
-        })
-
-    return Response(data)
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def list_categories(request):
-    categories = Category.objects.all()
-
-    data = [{'id': c.id, 'name': c.name} for c in categories]
-    return Response(data)
 
 
 # =========================
