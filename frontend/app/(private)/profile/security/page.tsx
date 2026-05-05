@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSecurity } from "@/hooks/use-security"
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
@@ -20,6 +20,8 @@ export default function ProfileSecurity() {
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const newPasswordRef = useRef<HTMLInputElement>(null)
+  const confirmPasswordRef = useRef<HTMLInputElement>(null)
 
   const validatePassword = (pwd: string) => {
     if (pwd.length < 8) return "A senha deve ter no mínimo 8 caracteres."
@@ -41,11 +43,13 @@ export default function ProfileSecurity() {
     const pwdError = validatePassword(formData.new_password)
     if (pwdError) {
       setError(pwdError)
+      newPasswordRef.current?.focus()
       return
     }
 
     if (formData.new_password !== formData.confirm_new_password) {
       setError("As senhas não coincidem.")
+      confirmPasswordRef.current?.focus()
       return
     }
 
@@ -119,6 +123,7 @@ export default function ProfileSecurity() {
               type="password" 
               placeholder="Informe a nova senha" 
               value={formData.new_password}
+              ref={newPasswordRef}
               onChange={(e) => setFormData({...formData, new_password: e.target.value})}
             />
             <p className="text-[11px] text-gray-500">Mínimo 8 caracteres, 1 maiúscula, 1 número e 1 caractere especial.</p>
@@ -130,6 +135,7 @@ export default function ProfileSecurity() {
               type="password" 
               placeholder="Repita a nova senha" 
               value={formData.confirm_new_password}
+              ref={confirmPasswordRef}
               onChange={(e) => setFormData({...formData, confirm_new_password: e.target.value})}
             />
           </div>

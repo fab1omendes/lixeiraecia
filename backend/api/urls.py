@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .products import views as products_views
 
 urlpatterns = [
     # auth
@@ -13,8 +14,10 @@ urlpatterns = [
     path('user/change-password', views.change_password),
 
     # products
-    path('products', views.list_products),
-    path('categories', views.list_categories),
+    path('products', products_views.list_products),
+    path('products/<int:pk>', products_views.product_detail),
+    path('categories', products_views.list_categories),
+    path('categories/<int:pk>', products_views.category_detail),
 
     # address
     path('addresses', views.list_addresses),

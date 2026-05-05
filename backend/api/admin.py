@@ -7,8 +7,8 @@ from api.promotions.models import Promotion, Coupon
 from api.payments.models import Payment
 from api.stock.models import StockMovement
 
-admin.site.register(CustomUser)
-admin.site.register(Address)
+# admin.site.register(CustomUser)
+# admin.site.register(Address)
 admin.site.register(Category)
 admin.site.register(Product)
 admin.site.register(ProductImage)

@@ -24,7 +24,7 @@ export function useSignup() {
       first_name: firstName,
       last_name: lastName,
       name: fullName,
-      photo: formData.get("image") || null,
+      avatar: formData.get("avatar") || null,
       birth_date: formattedBirthDate,
       cpf: formData.get("cpf") || "",
       user_type: formData.get("user_type") || "pf",
@@ -71,7 +71,7 @@ export function useSignup() {
         });
 
         if (loginRes?.ok) {
-          window.location.href = "/account"; 
+          window.location.href = "/store"; 
         } else {
           console.error("NextAuth auto-login error:", loginRes?.error);
           alert('Conta criada mas falha ao logar automaticamente. Erro: ' + (loginRes?.error || 'Desconhecido'));

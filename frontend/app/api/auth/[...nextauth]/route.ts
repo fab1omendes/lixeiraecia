@@ -47,12 +47,36 @@ export const authOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }: any) {
-      if (user) {
-        // user é o objeto retornado no authorize()
+    async jwt({ token, user, account }: any) {
+      if (account?.provider === "google" && user) {
+        // Para Google, precisamos buscar o token e status no nosso backend
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              image: user.image
+            })
+          });
+          if (res.ok) {
+            const backendUser = await res.json();
+            token.accessToken = backendUser.token;
+            token.id = backendUser.id;
+            token.isStaff = backendUser.is_staff;
+            token.permissions = backendUser.permissions || [];
+          }
+        } catch (error) {
+          console.error("Erro ao sincronizar usuário Google com backend:", error);
+        }
+      } else if (user) {
+    // user é o objeto retornado no authorize() para Credentials
         const u = user as any;
         token.accessToken = u.token || u.access || u.access_token;
         token.id = u.id || u.user_id;
+        token.isStaff = u.is_staff;
+        token.permissions = u.permissions || [];
       }
       return token;
     },
@@ -60,6 +84,8 @@ export const authOptions = {
       // Repassa os dados persistidos no token JWT para a sessão do cliente
       (session as any).accessToken = token.accessToken;
       (session.user as any).id = token.id;
+      (session.user as any).isStaff = token.isStaff;
+      (session.user as any).permissions = token.permissions;
       return session;
     },
     async signIn({ user, account }: any) {
