@@ -30,9 +30,11 @@ export function Navbar() {
   const avatar = profile?.avatar || "";
   const name = profile?.name || "";
   const email = profile?.email || "";
+  const [mounted, setMounted] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
+    setMounted(true);
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
@@ -177,7 +179,11 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          {session ? (
+          {!mounted ? (
+            <div className="w-9 h-9 flex items-center justify-center">
+              <User size={18} className="text-gray-400 animate-pulse" />
+            </div>
+          ) : session ? (
             <Popover>
               <PopoverTrigger asChild>
                 <button className="rounded-full overflow-hidden w-9 h-9 border focus:outline-none focus:ring-2 focus:ring-offset-2">
