@@ -27,4 +27,14 @@ urlpatterns = [
 
     # order
     path('orders/create', views.create_order),
+
+    # admin
+    path('admin/stats', views.dashboard_stats),
+    path('admin/orders', views.list_orders),
+    path('admin/orders/<int:pk>/status', views.update_order_status),
+    path('admin/users', views.list_users_admin),
+    path('admin/users/<int:pk>/status', views.update_user_status_admin),
+    path('admin/promotions', views.list_create_promotions),
+    path('admin/promotions/<int:pk>', views.delete_promotion),
+    path('admin/coupons', views.list_create_coupons),
 ]

@@ -9,8 +9,13 @@ from django.contrib.auth.models import BaseUserManager
 from api.users.models import CustomUser, Address
 from api.products.models import Product, Category
 from api.orders.models import Order, OrderItem
+from api.promotions.models import Coupon, Promotion
 
 from rest_framework.authtoken.models import Token
+from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.permissions import IsAdminUser
 
 
 # =========================
@@ -381,3 +386,233 @@ def create_order(request):
         'order_id': order.id,
         'total': total
     })
+# =========================
+# �� ADMIN / DASHBOARD
+# =========================
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def dashboard_stats(request):
+    now = timezone.now()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_end = start_of_month - timedelta(seconds=1)
+    last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # 1. Vendas Totais
+    total_revenue = Order.objects.filter(status='paid').aggregate(Sum('total'))['total__sum'] or 0
+    
+    # Trend Vendas (vs last month)
+    revenue_this_month = Order.objects.filter(status='paid', created_at__gte=start_of_month).aggregate(Sum('total'))['total__sum'] or 0
+    revenue_last_month = Order.objects.filter(status='paid', created_at__range=(last_month_start, last_month_end)).aggregate(Sum('total'))['total__sum'] or 0
+    
+    revenue_trend = 0
+    if revenue_last_month > 0:
+        revenue_trend = ((revenue_this_month - revenue_last_month) / revenue_last_month) * 100
+
+    # 2. Novos Pedidos
+    new_orders_count = Order.objects.filter(created_at__gte=start_of_month).count()
+    last_month_orders = Order.objects.filter(created_at__range=(last_month_start, last_month_end)).count()
+    
+    orders_trend = 0
+    if last_month_orders > 0:
+        orders_trend = ((new_orders_count - last_month_orders) / last_month_orders) * 100
+
+    # 3. Novos Clientes
+    new_users_count = CustomUser.objects.filter(date_joined__gte=start_of_month).count()
+    last_month_users = CustomUser.objects.filter(date_joined__range=(last_month_start, last_month_end)).count()
+    
+    users_trend = 0
+    if last_month_users > 0:
+        users_trend = ((new_users_count - last_month_users) / last_month_users) * 100
+
+    # 4. Estoque em Alerta
+    low_stock_count = Product.objects.filter(stock__lt=10, is_active=True).count()
+
+    return Response({
+        "revenue": {
+            "value": float(total_revenue),
+            "trend": f"{revenue_trend:+.1f}% do mês passado"
+        },
+        "orders": {
+            "value": new_orders_count,
+            "trend": f"{orders_trend:+.1f}% do mês passado"
+        },
+        "users": {
+            "value": new_users_count,
+            "trend": f"{users_trend:+.1f}% do mês passado"
+        },
+        "low_stock": {
+            "value": low_stock_count,
+            "trend": f"{low_stock_count} itens abaixo do mínimo"
+        }
+    })
+
+# =========================
+# �� ORDERS (Admin)
+# =========================
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def list_orders(request):
+    status_filter = request.GET.get('status', '')
+    orders = Order.objects.all().order_by('-created_at')
+
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
+    data = []
+    for o in orders:
+        data.append({
+            'id': o.id,
+            'user': {
+                'id': o.user.id,
+                'email': o.user.email,
+                'name': o.user.name
+            },
+            'address': {
+                'street': o.address.street,
+                'number': o.address.number,
+                'city': o.address.city,
+                'state': o.address.state
+            },
+            'total': float(o.total),
+            'status': o.status,
+            'created_at': o.created_at.isoformat(),
+            'items': [{
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'price': float(item.price)
+            } for item in o.items.all()]
+        })
+
+    return Response(data)
+
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def update_order_status(request, pk):
+    try:
+        order = Order.objects.get(pk=pk)
+    except Order.DoesNotExist:
+        return Response({'detail': 'Pedido não encontrado'}, status=404)
+
+    new_status = request.data.get('status')
+    if new_status not in [s[0] for s in Order.STATUS_CHOICES]:
+        return Response({'detail': 'Status inválido'}, status=400)
+
+    order.status = new_status
+    order.save()
+    return Response({'detail': 'Status atualizado com sucesso'})
+
+# =========================
+# �� USERS (Admin)
+# =========================
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def list_users_admin(request):
+    users = CustomUser.objects.all().order_by('-date_joined')
+    
+    data = [{
+        'id': u.id,
+        'email': u.email,
+        'name': u.name,
+        'phone': u.phone,
+        'cpf': u.cpf,
+        'user_type': u.user_type,
+        'status': u.status,
+        'date_joined': u.date_joined.isoformat(),
+        'is_staff': u.is_staff
+    } for u in users]
+    
+    return Response(data)
+
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def update_user_status_admin(request, pk):
+    try:
+        user = CustomUser.objects.get(pk=pk)
+    except CustomUser.DoesNotExist:
+        return Response({'detail': 'Usuário não encontrado'}, status=404)
+
+    new_status = request.data.get('status')
+    if new_status not in ['A', 'I']:
+        return Response({'detail': 'Status inválido'}, status=400)
+
+    user.status = new_status
+    user.save()
+    return Response({'detail': 'Status do usuário atualizado'})
+
+# =========================
+# ��️ PROMOTIONS / COUPONS (Admin)
+# =========================
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
+def list_create_promotions(request):
+    if request.method == 'GET':
+        promos = Promotion.objects.all().order_by('-start_date')
+        data = [{
+            'id': p.id,
+            'name': p.name,
+            'discount_type': p.discount_type,
+            'discount_value': float(p.discount_value),
+            'start_date': p.start_date.isoformat(),
+            'end_date': p.end_date.isoformat(),
+            'is_active': p.is_active
+        } for p in promos]
+        return Response(data)
+
+    if request.method == 'POST':
+        data = request.data
+        promo = Promotion.objects.create(
+            name=data.get('name'),
+            discount_type=data.get('discount_type'),
+            discount_value=data.get('discount_value'),
+            start_date=data.get('start_date'),
+            end_date=data.get('end_date'),
+            is_active=data.get('is_active', True)
+        )
+        return Response({'id': promo.id}, status=201)
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def delete_promotion(request, pk):
+    try:
+        promo = Promotion.objects.get(pk=pk)
+        promo.delete()
+        return Response(status=204)
+    except Promotion.DoesNotExist:
+        return Response({'detail': 'Promoção não encontrada'}, status=404)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
+def list_create_coupons(request):
+    if request.method == 'GET':
+        coupons = Coupon.objects.all().order_by('-start_date')
+        data = [{
+            'id': c.id,
+            'code': c.code,
+            'discount_type': c.discount_type,
+            'discount_value': float(c.discount_value),
+            'min_value': float(c.min_value),
+            'max_uses': c.max_uses,
+            'used_count': c.used_count,
+            'start_date': c.start_date.isoformat(),
+            'end_date': c.end_date.isoformat(),
+            'is_active': c.is_active
+        } for c in coupons]
+        return Response(data)
+
+    if request.method == 'POST':
+        data = request.data
+        coupon = Coupon.objects.create(
+            code=data.get('code'),
+            discount_type=data.get('discount_type'),
+            discount_value=data.get('discount_value'),
+            min_value=data.get('min_value', 0),
+            max_uses=data.get('max_uses', None),
+            start_date=data.get('start_date'),
+            end_date=data.get('end_date'),
+            is_active=data.get('is_active', True)
+        )
+        return Response({'id': coupon.id}, status=201)
