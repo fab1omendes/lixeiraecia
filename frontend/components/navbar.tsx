@@ -13,6 +13,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useCatalog, Product } from "@/hooks/use-catalog";
 import { useCart } from "@/app/(public)/store/cart";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/Logo";
 
 export function Navbar() {
   const router = useRouter();
@@ -79,12 +80,12 @@ export function Navbar() {
       <div className="container mx-auto flex items-center justify-between h-16 px-4 gap-2">
         {/* Mobile Logo */}
         <div className="flex-1 mx-2 md:hidden">
-          <h1 className="font-bold text-xs cursor-pointer" onClick={() => router.push("/")}>Lixeira & Cia</h1>
+          <h1 className="font-bold text-xs cursor-pointer" onClick={() => router.push("/")}><Logo /></h1>
         </div>
 
         {/* Desktop Logo */}
         <div className="hidden md:block shrink-0">
-          <h1 className="font-bold text-lg md:text-xl cursor-pointer" onClick={() => router.push("/")}>Lixeira & Cia</h1>
+          <h1 className="font-bold text-lg md:text-xl cursor-pointer" onClick={() => router.push("/")}><Logo /></h1>
         </div>
 
         {/* Search Container */}
@@ -175,7 +176,6 @@ export function Navbar() {
         <nav className="hidden lg:flex gap-6 mx-4 shrink-0">
           <a href="/store" className="text-sm font-medium hover:text-blue-600">Produtos</a>
           <a href="/category" className="text-sm font-medium hover:text-blue-600">Categorias</a>
-          <a href="/contact" className="text-sm font-medium hover:text-blue-600">Contato</a>
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
