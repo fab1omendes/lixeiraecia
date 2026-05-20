@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { getProfileAction, updateProfileAction } from "@/lib/api/profile";
 
 export interface UserProfileData {
   id: number;
@@ -15,31 +16,17 @@ export interface UserProfileData {
 }
 
 export function useProfile() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function fetchProfile() {
-      if (status !== "authenticated" || !session) return;
-      const accessToken = (session as any).accessToken;
-      if (!accessToken) return;
+      if (status !== "authenticated") return;
 
       try {
-        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/user/me", {
-          headers: {
-            "Authorization": `Token ${accessToken}`
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setProfile(data);
-        } else {
-          console.error(`Falha ao buscar perfil: ${res.status} ${res.statusText}`);
-          const errorText = await res.text();
-          console.error("Detalhes do erro:", errorText);
-        }
+        const data = await getProfileAction();
+        setProfile(data);
       } catch (error) {
         console.error("Erro ao buscar perfil:", error);
       } finally {
@@ -52,30 +39,19 @@ export function useProfile() {
     } else if (status === "unauthenticated") {
       setLoading(false);
     }
-  }, [session, status]);
+  }, [status]);
 
   async function updateProfile(dataToSend: any) {
-    const accessToken = (session as any)?.accessToken;
-    if (!accessToken) return { success: false, error: "No token" };
+    if (status !== "authenticated") return { success: false, error: "No token" };
 
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/user/me", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Token ${accessToken}`
-        },
-        body: JSON.stringify(dataToSend)
-      });
-
-      if (res.ok) {
-        const updatedData = await res.json();
-        setProfile(updatedData);
+      const res = await updateProfileAction(dataToSend);
+      if (res.success && res.data) {
+        setProfile(res.data);
         return { success: true };
       } else {
-        const errors = await res.json();
-        console.error("Erros do backend:", errors);
-        return { success: false, error: errors };
+        console.error("Erros do backend:", res.error);
+        return { success: false, error: res.error };
       }
     } catch (error) {
       console.error("Erro na comunicação da API:", error);

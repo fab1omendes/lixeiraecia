@@ -14,9 +14,15 @@ import { SheetDescription } from "@/components/ui/sheet";
 import { ShoppingCart, Trash2, AlertTriangle, Plus, Minus } from "lucide-react";
 import { useCart } from "@/app/(public)/store/cart";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export function CartDrawer() {
   const { items, removeItem, increaseQuantity, decreaseQuantity } = useCart();
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const { status } = useSession();
 
   const total = items.reduce(
     (acc, item) => acc + item.price * item.quantity,
@@ -29,7 +35,7 @@ export function CartDrawer() {
   );
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="relative group">
           <ShoppingCart size={18} className="group-hover:scale-110 transition-transform" />
@@ -156,7 +162,17 @@ export function CartDrawer() {
               </div>
             </div>
 
-            <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl uppercase tracking-widest shadow-xl group/checkout active:scale-95 transition-all">
+            <Button 
+              onClick={() => {
+                setOpen(false);
+                if (status === 'authenticated') {
+                  router.push('/checkout');
+                } else {
+                  router.push('/login?callbackUrl=/checkout');
+                }
+              }}
+              className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl uppercase tracking-widest shadow-xl group/checkout active:scale-95 transition-all"
+            >
               Finalizar Compra
               <ShoppingCart className="ml-2 w-5 h-5 group-hover/checkout:translate-x-1 transition-transform" />
             </Button>

@@ -45,6 +45,7 @@ import {
 
 const statusMap: Record<string, { label: string, color: string, icon: any }> = {
   pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+  accepted: { label: "Aceito", color: "bg-green-100 text-green-800", icon: CheckCircle2 },
   paid: { label: "Pago", color: "bg-green-100 text-green-800", icon: CheckCircle2 },
   canceled: { label: "Cancelado", color: "bg-red-100 text-red-800", icon: XCircle },
 };
@@ -94,6 +95,7 @@ export default function PedidosPainel() {
                 <SelectContent>
                   <SelectItem value="all">Todos os Pedidos</SelectItem>
                   <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="accepted">Aceitos</SelectItem>
                   <SelectItem value="paid">Pagos</SelectItem>
                   <SelectItem value="canceled">Cancelados</SelectItem>
                 </SelectContent>
@@ -224,15 +226,15 @@ export default function PedidosPainel() {
                                 <div className="flex gap-2">
                                   {order.status === 'pending' && (
                                     <>
-                                      <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleUpdateStatus(order.id, 'paid')}>
-                                        Marcar como Pago
+                                      <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleUpdateStatus(order.id, 'accepted')}>
+                                        Aceitar Pedido
                                       </Button>
                                       <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleUpdateStatus(order.id, 'canceled')}>
                                         Cancelar
                                       </Button>
                                     </>
                                   )}
-                                  {order.status === 'paid' && (
+                                  {(order.status === 'paid' || order.status === 'accepted') && (
                                     <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleUpdateStatus(order.id, 'canceled')}>
                                       Cancelar Pedido
                                     </Button>

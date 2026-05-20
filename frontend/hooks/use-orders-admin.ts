@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { getAdminOrders, updateOrderStatusAction } from '@/lib/api/orders';
 
 export interface OrderAdmin {
   id: number;
@@ -33,46 +34,25 @@ export function useOrdersAdmin() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async (statusFilter?: string) => {
-    if (status !== 'authenticated' || !session) return;
-    const accessToken = (session as any).accessToken;
-    if (!accessToken) return;
+    if (status !== 'authenticated') return;
 
     setLoading(true);
     try {
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/admin/orders`;
-      if (statusFilter) url += `?status=${statusFilter}`;
-
-      const res = await fetch(url, {
-        headers: {
-          'Authorization': `Token ${accessToken}`
-        }
-      });
-
-      if (!res.ok) throw new Error('Erro ao buscar pedidos');
-      const data = await res.json();
+      const data = await getAdminOrders(statusFilter);
       setOrders(data);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [session, status]);
+  }, [status]);
 
   const updateStatus = async (orderId: number, newStatus: string) => {
-    if (status !== 'authenticated' || !session) return { success: false };
-    const accessToken = (session as any).accessToken;
+    if (status !== 'authenticated') return { success: false };
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${accessToken}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (!res.ok) throw new Error('Erro ao atualizar status');
+      const res = await updateOrderStatusAction(orderId, newStatus);
+      if (!res.success) throw new Error(res.error || 'Erro ao atualizar status');
       
       // Update local state
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));

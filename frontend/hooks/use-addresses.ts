@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { 
+  getAddresses, 
+  createAddressAction, 
+  updateAddressAction, 
+  deleteAddressAction 
+} from "@/lib/api/addresses";
 
 export interface Address {
   id: number;
@@ -22,95 +28,52 @@ export function useAddresses() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const token = (session as any)?.accessToken;
+  const isAuthenticated = !!session;
 
   const fetchAddresses = useCallback(async () => {
-    if (!token) return;
+    if (!isAuthenticated) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses`, {
-        headers: {
-          "Authorization": `Token ${token}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAddresses(data);
-      }
+      const data = await getAddresses();
+      setAddresses(data);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   const updateAddress = async (id: number, data: any) => {
-    if (!token) return { success: false, error: "No token" };
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/${id}/edit`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        await fetchAddresses();
-        return { success: true };
-      } else {
-        const err = await res.json();
-        return { success: false, error: err };
-      }
-    } catch (e) {
-      return { success: false, error: e };
+    const res = await updateAddressAction(id, data);
+    if (res.success) {
+      await fetchAddresses();
     }
+    return res;
   };
 
   const deleteAddress = async (id: number) => {
-    if (!token) return { success: false, error: "No token" };
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/${id}/delete`, {
-        method: "DELETE",
-        headers: { "Authorization": `Token ${token}` },
-      });
-      if (res.ok) {
-        await fetchAddresses();
-        return { success: true };
-      } else {
-        const err = await res.json();
-        return { success: false, error: err };
-      }
-    } catch (e) {
-      return { success: false, error: e };
+    const res = await deleteAddressAction(id);
+    if (res.success) {
+      await fetchAddresses();
     }
+    return res;
   };
 
   const createAddress = async (data: any) => {
-    if (!token) return { success: false, error: "No token" };
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/addresses/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Token ${token}` },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        await fetchAddresses();
-        return { success: true };
-      } else {
-        const err = await res.json();
-        return { success: false, error: err };
-      }
-    } catch (e) {
-      return { success: false, error: e };
+    const res = await createAddressAction(data);
+    if (res.success) {
+      await fetchAddresses();
     }
+    return res;
   };
 
   useEffect(() => {
-    if (token) fetchAddresses();
-  }, [token, fetchAddresses]);
+    if (isAuthenticated) fetchAddresses();
+  }, [isAuthenticated, fetchAddresses]);
 
   return {
     addresses,
     loading,
     refetch: fetchAddresses,
-    token,
     updateAddress,
     deleteAddress,
     createAddress,

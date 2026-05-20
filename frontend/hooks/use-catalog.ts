@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react';
+import { getProductsAction, getCategoriesAction, getProductAction } from '@/lib/api/catalog';
 
 export interface Product {
   id: number;
@@ -27,12 +28,8 @@ export function useCatalog() {
   const getProducts = useCallback(async (search?: string) => {
     setLoading(true);
     try {
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/products`;
-      if (search) url += `?search=${encodeURIComponent(search)}`;
-      
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Erro ao buscar produtos");
-      return await res.json() as Product[];
+      const data = await getProductsAction(search);
+      return data as Product[];
     } catch (err: any) {
       setError(err.message);
       return [];
@@ -44,9 +41,8 @@ export function useCatalog() {
   const getCategories = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`);
-      if (!res.ok) throw new Error("Erro ao buscar categorias");
-      return await res.json() as Category[];
+      const data = await getCategoriesAction();
+      return data as Category[];
     } catch (err: any) {
       setError(err.message);
       return [];
@@ -58,9 +54,8 @@ export function useCatalog() {
   const getProduct = useCallback(async (id: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`);
-      if (!res.ok) throw new Error("Produto não encontrado");
-      return await res.json() as Product;
+      const data = await getProductAction(id);
+      return data as Product;
     } catch (err: any) {
       setError(err.message);
       return null;

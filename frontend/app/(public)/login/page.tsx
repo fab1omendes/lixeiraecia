@@ -2,7 +2,7 @@ import { LoginForm } from "@/components/login-form"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
 export default async function Login() {

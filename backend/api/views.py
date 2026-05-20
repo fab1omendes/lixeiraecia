@@ -373,11 +373,10 @@ def create_order(request):
             price=product.price
         )
 
-        total += product.price * item['quantity']
-
-        # 🔻 baixa estoque
         product.stock -= item['quantity']
         product.save()
+
+        total += product.price * item['quantity']
 
     order.total = total
     order.save()
@@ -386,8 +385,36 @@ def create_order(request):
         'order_id': order.id,
         'total': total
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_my_orders(request):
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    data = []
+    for o in orders:
+        data.append({
+            'id': o.id,
+            'address': {
+                'street': o.address.street,
+                'number': o.address.number,
+                'city': o.address.city,
+                'state': o.address.state
+            },
+            'total': float(o.total),
+            'status': o.status,
+            'payment_method': o.payment_method,
+            'created_at': o.created_at.isoformat(),
+            'items': [{
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'price': float(item.price),
+                'product_id': item.product.id
+            } for item in o.items.all()]
+        })
+
+    return Response(data)
 # =========================
-# �� ADMIN / DASHBOARD
+#  ADMIN / DASHBOARD
 # =========================
 
 @api_view(['GET'])
@@ -448,7 +475,7 @@ def dashboard_stats(request):
     })
 
 # =========================
-# �� ORDERS (Admin)
+#  ORDERS (Admin)
 # =========================
 
 @api_view(['GET'])
@@ -495,16 +522,42 @@ def update_order_status(request, pk):
     except Order.DoesNotExist:
         return Response({'detail': 'Pedido não encontrado'}, status=404)
 
-    new_status = request.data.get('status')
-    if new_status not in [s[0] for s in Order.STATUS_CHOICES]:
-        return Response({'detail': 'Status inválido'}, status=400)
+    raw_status = request.data.get('status')
+    if not raw_status:
+        return Response({'detail': 'Status não fornecido'}, status=400)
 
-    order.status = new_status
+    # Normalizar para 'canceled' para consistência interna
+    status_map = { 'cancelled': 'canceled' }
+    target_status = status_map.get(raw_status, raw_status)
+    current_status = status_map.get(order.status, order.status)
+
+    # Lógica de estoque
+    # Definir ambos os possíveis valores de status cancelado
+    cancelled_statuses = ['canceled', 'cancelled']
+    # Se o pedido estava cancelado e vai mudar para outro status, verifica estoque e subtrai
+    if current_status in cancelled_statuses and target_status not in cancelled_statuses:
+        with transaction.atomic():
+            # Reativar pedido: checar estoque antes de subtrair
+            for item in order.items.all():
+                if item.product.stock < item.quantity:
+                    return Response({ 'detail': f'Estoque insuficiente para o produto {item.product.name} para reativar o pedido' }, status=400)
+            # Subtrair estoque
+            for item in order.items.all():
+                item.product.stock -= item.quantity
+                item.product.save()
+    elif current_status not in cancelled_statuses and target_status in cancelled_statuses:
+        with transaction.atomic():
+            # Cancelamento: devolver estoque
+            for item in order.items.all():
+                item.product.stock += item.quantity
+                item.product.save()
+    # Atualizar status
+    order.status = target_status
     order.save()
-    return Response({'detail': 'Status atualizado com sucesso'})
+    return Response({ 'detail': 'Status atualizado com sucesso' })
 
 # =========================
-# �� USERS (Admin)
+#  USERS (Admin)
 # =========================
 
 @api_view(['GET'])
