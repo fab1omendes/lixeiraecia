@@ -1,18 +1,18 @@
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { supabase } from "@/lib/supabaseClient";
+import { 
+  getCategory as getCategoryAction,
+  createCategoryAction,
+  updateCategoryAction,
+  deleteCategoryAction,
+  getProduct as getProductAction,
+  createProductAction,
+  updateProductAction,
+  deleteProductAction
+} from "@/lib/api/admin";
 
 export function useAdminCatalog() {
-  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
-
-  const getHeaders = () => {
-    const token = (session as any)?.accessToken;
-    return {
-      "Content-Type": "application/json",
-      "Authorization": `Token ${token}`,
-    };
-  };
 
   // IMAGES
   async function uploadImage(file: File, path: string) {
@@ -45,23 +45,13 @@ export function useAdminCatalog() {
 
   // CATEGORIES
   async function getCategory(id: number) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${id}`, {
-      headers: getHeaders(),
-    });
-    return res.json();
+    return getCategoryAction(id);
   }
 
   async function createCategory(data: { name: string; description?: string; image_url?: string }) {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
-      return { success: res.ok, data: await res.json() };
-    } catch (error) {
-      return { success: false, error };
+      return await createCategoryAction(data);
     } finally {
       setLoading(false);
     }
@@ -70,14 +60,7 @@ export function useAdminCatalog() {
   async function updateCategory(id: number, data: any) {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${id}`, {
-        method: "PUT",
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
-      return { success: res.ok, data: await res.json() };
-    } catch (error) {
-      return { success: false, error };
+      return await updateCategoryAction(id, data);
     } finally {
       setLoading(false);
     }
@@ -86,13 +69,7 @@ export function useAdminCatalog() {
   async function deleteCategory(id: number) {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${id}`, {
-        method: "DELETE",
-        headers: getHeaders(),
-      });
-      return { success: res.ok };
-    } catch (error) {
-      return { success: false, error };
+      return await deleteCategoryAction(id);
     } finally {
       setLoading(false);
     }
@@ -100,23 +77,13 @@ export function useAdminCatalog() {
 
   // PRODUCTS
   async function getProduct(id: number) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, {
-      headers: getHeaders(),
-    });
-    return res.json();
+    return getProductAction(id);
   }
 
   async function createProduct(data: any) {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
-      return { success: res.ok, data: await res.json() };
-    } catch (error) {
-      return { success: false, error };
+      return await createProductAction(data);
     } finally {
       setLoading(false);
     }
@@ -125,14 +92,7 @@ export function useAdminCatalog() {
   async function updateProduct(id: number, data: any) {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, {
-        method: "PUT",
-        headers: getHeaders(),
-        body: JSON.stringify(data),
-      });
-      return { success: res.ok, data: await res.json() };
-    } catch (error) {
-      return { success: false, error };
+      return await updateProductAction(id, data);
     } finally {
       setLoading(false);
     }
@@ -141,13 +101,7 @@ export function useAdminCatalog() {
   async function deleteProduct(id: number) {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${id}`, {
-        method: "DELETE",
-        headers: getHeaders(),
-      });
-      return { success: res.ok };
-    } catch (error) {
-      return { success: false, error };
+      return await deleteProductAction(id);
     } finally {
       setLoading(false);
     }

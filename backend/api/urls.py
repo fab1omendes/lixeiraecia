@@ -27,6 +27,7 @@ urlpatterns = [
 
     # order
     path('orders/create', views.create_order),
+    path('orders/my-orders', views.list_my_orders),
 
     # admin
     path('admin/stats', views.dashboard_stats),

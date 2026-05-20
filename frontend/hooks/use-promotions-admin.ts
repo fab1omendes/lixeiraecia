@@ -2,6 +2,13 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { 
+  getAdminPromotions, 
+  getAdminCoupons, 
+  createPromotionAction, 
+  createCouponAction, 
+  deletePromotionAction 
+} from '@/lib/api/admin';
 
 export interface PromotionAdmin {
   id: number;
@@ -27,33 +34,20 @@ export interface CouponAdmin {
 }
 
 export function usePromotionsAdmin() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [promotions, setPromotions] = useState<PromotionAdmin[]>([]);
   const [coupons, setCoupons] = useState<CouponAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
-    if (status !== 'authenticated' || !session) return;
-    const accessToken = (session as any).accessToken;
-    if (!accessToken) return;
+    if (status !== 'authenticated') return;
 
     setLoading(true);
     try {
-      const [promosRes, couponsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/promotions`, {
-          headers: { 'Authorization': `Token ${accessToken}` }
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons`, {
-          headers: { 'Authorization': `Token ${accessToken}` }
-        })
-      ]);
-
-      if (!promosRes.ok || !couponsRes.ok) throw new Error('Erro ao buscar dados de promoções');
-      
       const [promosData, couponsData] = await Promise.all([
-        promosRes.json(),
-        couponsRes.json()
+        getAdminPromotions(),
+        getAdminCoupons()
       ]);
 
       setPromotions(promosData);
@@ -63,20 +57,14 @@ export function usePromotionsAdmin() {
     } finally {
       setLoading(false);
     }
-  }, [session, status]);
+  }, [status]);
 
   const createPromotion = async (data: any) => {
-    const accessToken = (session as any)?.accessToken;
+    if (status !== 'authenticated') return { success: false, error: 'Não autenticado' };
+    
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/promotions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${accessToken}`
-        },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error('Erro ao criar promoção');
+      const res = await createPromotionAction(data);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar promoção');
       fetchAll();
       return { success: true };
     } catch (err: any) {
@@ -85,17 +73,11 @@ export function usePromotionsAdmin() {
   };
 
   const createCoupon = async (data: any) => {
-    const accessToken = (session as any)?.accessToken;
+    if (status !== 'authenticated') return { success: false, error: 'Não autenticado' };
+    
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/coupons`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${accessToken}`
-        },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error('Erro ao criar cupom');
+      const res = await createCouponAction(data);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar cupom');
       fetchAll();
       return { success: true };
     } catch (err: any) {
@@ -104,13 +86,11 @@ export function usePromotionsAdmin() {
   };
 
   const deletePromotion = async (id: number) => {
-    const accessToken = (session as any)?.accessToken;
+    if (status !== 'authenticated') return { success: false, error: 'Não autenticado' };
+    
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/promotions/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Token ${accessToken}` }
-      });
-      if (!res.ok) throw new Error('Erro ao excluir promoção');
+      const res = await deletePromotionAction(id);
+      if (!res.success) throw new Error(res.error || 'Erro ao excluir promoção');
       setPromotions(prev => prev.filter(p => p.id !== id));
       return { success: true };
     } catch (err: any) {

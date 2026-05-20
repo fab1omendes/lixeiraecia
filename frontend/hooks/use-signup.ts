@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { signupAction } from "@/lib/api/auth-api";
 
 export function useSignup() {
   const [loading, setLoading] = useState(false);
@@ -56,13 +57,9 @@ export function useSignup() {
     };
 
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/user/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSend)
-      });
+      const res = await signupAction(dataToSend);
 
-      if (res.ok) {
+      if (res.success) {
         // Se a conta for criada, fazemos login automático
         const loginRes = await signIn("credentials", {
           email: email,
@@ -77,8 +74,7 @@ export function useSignup() {
           alert('Conta criada mas falha ao logar automaticamente. Erro: ' + (loginRes?.error || 'Desconhecido'));
         }
       } else {
-        const errors = await res.json();
-        console.error("Erros do backend:", errors);
+        console.error("Erros do backend:", res.error);
         alert('Erro ao criar conta, verifique se o e-mail já existe.');
       }
     } catch (error) {

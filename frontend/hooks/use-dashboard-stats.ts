@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { getDashboardStats } from '@/lib/api/admin';
 
 export interface DashboardStats {
   revenue: { value: number; trend: string };
@@ -11,26 +12,17 @@ export interface DashboardStats {
 }
 
 export function useDashboardStats() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStats = useCallback(async () => {
-    if (status !== 'authenticated' || !session) return;
-    const accessToken = (session as any).accessToken;
-    if (!accessToken) return;
+    if (status !== 'authenticated') return;
 
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
-        headers: {
-          'Authorization': `Token ${accessToken}`
-        }
-      });
-
-      if (!res.ok) throw new Error('Erro ao buscar estatísticas do dashboard');
-      const data = await res.json();
+      const data = await getDashboardStats();
       setStats(data);
     } catch (err: any) {
       console.error(err);
@@ -38,7 +30,7 @@ export function useDashboardStats() {
     } finally {
       setLoading(false);
     }
-  }, [session, status]);
+  }, [status]);
 
   useEffect(() => {
     if (status === 'authenticated') {
