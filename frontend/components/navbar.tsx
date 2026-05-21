@@ -77,28 +77,37 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-[#c0d0f0]/80 via-[#d4def6]/80 to-[#eef3fd]/80 backdrop-blur-md overflow-hidden">
-      <div className="container mx-auto flex items-center justify-between h-16 px-4 gap-2">
+    <header
+      className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-[#c0d0f0]/80 via-[#d4def6]/80 to-[#eef3fd]/80 backdrop-blur-md overflow-visible"
+      onClick={() => router.push("/")}
+    >
+      <div className="container mx-auto flex items-center h-16 px-4 gap-4">
+
         {/* Mobile Logo */}
-        <div className="flex-1 mx-2 md:hidden flex justify-center">
-          <h1 className="font-bold text-xs cursor-pointer flex items-center justify-center" onClick={() => router.push("/")}>
-            <LogoMobile className="max-w-[6rem] w-full" />
-          </h1>
+        <div
+          className="md:hidden flex justify-center"
+          onClick={() => router.push("/")}
+        >
+          <LogoMobile className="w-full" />
         </div>
 
         {/* Desktop Logo */}
-        <div className="hidden md:block shrink-0">
-          <h1 className="font-bold text-lg md:text-xl cursor-pointer" onClick={() => router.push("/")}><Logo className="max-w-[8rem] w-full" /></h1>
+        <div
+          className="hidden md:block shrink-0 cursor-pointer"
+          onClick={() => router.push("/")}
+        >
+          <Logo className="w-full" />
         </div>
 
         {/* Search Container */}
-        <div className="flex-1 max-w-2xl relative" ref={dropdownRef}>
+        <div className="relative flex-1 min-w-0 mx-6" ref={dropdownRef}>
+
           {/* Mobile Search */}
           <div className="md:hidden">
             <InputGroup className="bg-white">
               <InputGroupInput
-                placeholder="Buscar..."
-                className="h-8 text-sm"
+                placeholder="Buscar produtos..."
+                className="h-10 text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -111,7 +120,7 @@ export function Navbar() {
           </div>
 
           {/* Desktop Search */}
-          <div className="hidden md:block w-full">
+          <div className="hidden md:block">
             <form onSubmit={handleSearch}>
               <InputGroup className="bg-white group-focus-within:ring-2 ring-blue-500/20 transition-all">
                 <InputGroupInput
@@ -147,7 +156,7 @@ export function Navbar() {
                     router.push(`/store?search=${encodeURIComponent(product.name)}`);
                     setShowDropdown(false);
                   }}
-                  className="flex items-center gap-4 p-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0 group"
+                  className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 p-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0 group"
                 >
                   <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden shrink-0 border border-gray-100">
                     <img
