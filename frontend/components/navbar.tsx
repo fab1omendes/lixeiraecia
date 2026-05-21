@@ -78,8 +78,7 @@ export function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-[#c0d0f0]/80 via-[#d4def6]/80 to-[#eef3fd]/80 backdrop-blur-md overflow-visible"
-      onClick={() => router.push("/")}
+      className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-[#c0d0f0]/80 via-[#d4def6]/80 to-[#eef3fd]/80 backdrop-blur-md overflow-visible"    
     >
       <div className="container mx-auto flex items-center h-16 px-4 gap-4">
 
