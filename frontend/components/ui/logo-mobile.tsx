@@ -1,4 +1,4 @@
-export function Logo({ className = "" }: { className?: string }) {
+export function LogoMobile({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center gap-4 ${className}`}>
       <svg
@@ -40,14 +40,6 @@ export function Logo({ className = "" }: { className?: string }) {
           fill="#047857"
         />
       </svg>
-      <div className="flex flex-col text-nowrap">
-        <span className="font-bold text-2xl tracking-tight text-emerald-700">
-          Lixeira & Cia
-        </span>
-        <span className="text-xs text-emerald-600 font-medium">
-          Soluções em Gestão de Resíduos
-        </span>
-      </div>
     </div>
   );
 }
