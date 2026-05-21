@@ -10,13 +10,13 @@ export function Footer() {
           <div>
             <Logo className="mb-4 [&_span]:text-gray-900 [&_span:last-child]:text-green-600 justify-center" />
             <p className="text-sm text-gray-400 leading-relaxed">
-              Desde 2008 oferecendo as melhores soluções em gestão de resíduos para empresas e residências.
+              Desde 2026 oferecendo as melhores soluções em gestão de resíduos para empresas e residências.
             </p>
           </div>
 
           <div>
-            <h3 className="font-bold text-white mb-4">Contato</h3>
-            <div className="space-y-3 text-sm">
+            <h3 className="font-bold text-gray-900 mb-4">Contato</h3>
+            <div className="flex flex-col items-center gap-4 md:gap-2 text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-500" />
                 <span>(11) 1234-5678</span>
@@ -33,10 +33,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="font-bold text-white mb-4">Institucional</h3>
+            <h3 className="font-bold text-gray-900 mb-4">Institucional</h3>
             <ul className="space-y-2 text-sm">
               <li><a href="#" className="hover:text-emerald-400 transition-colors">Sobre Nós</a></li>
-              <li><a href="#" className="hover:text-emerald-400 transition-colors">Projetos Integrados</a></li>
               <li><a href="#" className="hover:text-emerald-400 transition-colors">Políticas de Privacidade</a></li>
               <li><a href="#" className="hover:text-emerald-400 transition-colors">Termos de Uso</a></li>
             </ul>

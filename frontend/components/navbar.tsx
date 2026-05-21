@@ -14,6 +14,7 @@ import { useCatalog, Product } from "@/hooks/use-catalog";
 import { useCart } from "@/app/(public)/store/cart";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
+import { LogoMobile } from "./ui/logo-mobile";
 
 export function Navbar() {
   const router = useRouter();
@@ -76,16 +77,18 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-[#c0d0f0]/80 via-[#d4def6]/80 to-[#eef3fd]/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-[#c0d0f0]/80 via-[#d4def6]/80 to-[#eef3fd]/80 backdrop-blur-md overflow-hidden">
       <div className="container mx-auto flex items-center justify-between h-16 px-4 gap-2">
         {/* Mobile Logo */}
-        <div className="flex-1 mx-2 md:hidden">
-          <h1 className="font-bold text-xs cursor-pointer" onClick={() => router.push("/")}><Logo /></h1>
+        <div className="flex-1 mx-2 md:hidden flex justify-center">
+          <h1 className="font-bold text-xs cursor-pointer flex items-center justify-center" onClick={() => router.push("/")}>
+            <LogoMobile className="max-w-[6rem] w-full" />
+          </h1>
         </div>
 
         {/* Desktop Logo */}
         <div className="hidden md:block shrink-0">
-          <h1 className="font-bold text-lg md:text-xl cursor-pointer" onClick={() => router.push("/")}><Logo /></h1>
+          <h1 className="font-bold text-lg md:text-xl cursor-pointer" onClick={() => router.push("/")}><Logo className="max-w-[8rem] w-full" /></h1>
         </div>
 
         {/* Search Container */}
@@ -194,7 +197,7 @@ export function Navbar() {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-56 p-2" align="end">
-                <div className="flex flex-col mb-2 px-2 pb-2 border-b gap-1">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-2 text-sm w-full text-left">
                   <span className="font-semibold text-sm truncate">{name || "Sua Conta"}</span>
                   <span className="text-xs text-muted-foreground truncate">{email || ""}</span>
                 </div>
