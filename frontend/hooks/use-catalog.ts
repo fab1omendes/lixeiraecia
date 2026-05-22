@@ -25,10 +25,10 @@ export function useCatalog() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getProducts = useCallback(async (search?: string) => {
+  const getProducts = useCallback(async (search?: string, category?: string) => {
     setLoading(true);
     try {
-      const data = await getProductsAction(search);
+      const data = await getProductsAction(search, category);
       return data as Product[];
     } catch (err: any) {
       setError(err.message);

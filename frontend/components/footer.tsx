@@ -4,8 +4,7 @@ import { Logo } from "@/components/ui/Logo";
 // components/footer.tsx
 export function Footer() {
   return ( 
-    <footer className="py-10 border-t text-center text-sm text-muted-foreground bg-[#c0d0f0]/40 backdrop-blur">
-      <div className="container mx-auto px-4 py-12">
+    <footer className="py-10 border-none text-center text-sm text-muted-foreground bg-gradient-to-b from-white to-[#c0d0f0]/90 backdrop-blur">      <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <Logo className="mb-4 [&_span]:text-gray-900 [&_span:last-child]:text-green-600 justify-center" />

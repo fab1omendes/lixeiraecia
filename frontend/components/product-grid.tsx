@@ -11,17 +11,31 @@ export function ProductGrid() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
 
-  const { getProducts, loading } = useCatalog();
+  const { getProducts, getCategories, loading } = useCatalog();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryName, setCategoryName] = useState<string>("");
 
   useEffect(() => {
     async function load() {
-      const data = await getProducts(search);
+      const data = await getProducts(search, category);
       setProducts(data);
+
+      if (category) {
+        const cats = await getCategories();
+        const currentCat = cats.find((c) => c.id === parseInt(category));
+        if (currentCat) {
+          setCategoryName(currentCat.name);
+        } else {
+          setCategoryName("");
+        }
+      } else {
+        setCategoryName("");
+      }
     }
     load();
-  }, [getProducts, search]);
+  }, [getProducts, getCategories, search, category]);
 
   if (loading) {
     return (
@@ -40,7 +54,7 @@ export function ProductGrid() {
           {search ? `Nenhum resultado para "${search}"` : "Nenhum produto disponível no momento."}
         </p>
         <p className="text-sm mb-6">Tente usar termos menos específicos ou outras palavras.</p>
-        {search && (
+        {(search || category) && (
           <Button variant="outline" onClick={() => router.push('/store')} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" /> Ver Todos os Produtos
           </Button>
@@ -55,10 +69,10 @@ export function ProductGrid() {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-black text-gray-900 font-outfit uppercase tracking-tighter">
-              {search ? `Busca: "${search}"` : "Nossa Vitrine"}
+              {search ? `Busca: "${search}"` : categoryName ? `Categoria: ${categoryName}` : "Nossa Vitrine"}
             </h2>
             <p className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-gray-500 font-medium">
-              {search ? `Encontramos ${products.length} itens correspondentes.` : "Qualidade e economia para sua casa ou empresa."}
+              {search ? `Encontramos ${products.length} itens correspondentes.` : categoryName ? `Confira nossos produtos em ${categoryName}.` : "Qualidade e economia para sua casa ou empresa."}
             </p>
           </div>
           <div className="h-[2px] flex-1 bg-gray-100 hidden md:block mx-8" />

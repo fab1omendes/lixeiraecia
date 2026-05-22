@@ -2,9 +2,14 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-export async function getProductsAction(search?: string) {
+export async function getProductsAction(search?: string, category?: string) {
   let url = `${API_URL}/products`
-  if (search) url += `?search=${encodeURIComponent(search)}`
+  const params = new URLSearchParams()
+  if (search) params.append("search", search)
+  if (category) params.append("category", category)
+  
+  const queryString = params.toString()
+  if (queryString) url += `?${queryString}`
   
   const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) throw new Error("Erro ao buscar produtos")

@@ -15,12 +15,15 @@ from api.products.models import Product, Category, ProductImage
 def list_products(request):
     if request.method == 'GET':
         search = request.GET.get('search', '')
+        category = request.GET.get('category', '')
         products = Product.objects.filter(is_active=True)
         
         if search:
             products = products.filter(
                 Q(name__icontains=search) | Q(description__icontains=search)
             )
+        if category and category.isdigit():
+            products = products.filter(category_id=category)
         data = [{
             'id': p.id,
             'name': p.name,
